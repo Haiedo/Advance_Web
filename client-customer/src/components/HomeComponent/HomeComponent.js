@@ -96,7 +96,7 @@ const Home = () => {
         ) : (
           <div />
         )}
-        {categories?.map(category =>
+        {Array.isArray(categories) && categories.map(category =>
           renderCategoryProducts(category._id, category.name)
         )}
       </div>
