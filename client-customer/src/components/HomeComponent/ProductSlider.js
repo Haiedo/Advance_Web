@@ -51,7 +51,7 @@ const ProductSlider = ({ products }) => {
   return (
     <div className="relative group">
       <Slider {...settings}>
-        {products?.map((item) => (
+        {Array.isArray(products) && products.map((item) => (
           <div key={item._id} className="p-2">
             <figure>
               <Link to={'/product/' + item._id}>

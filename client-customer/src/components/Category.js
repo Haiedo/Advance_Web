@@ -38,7 +38,7 @@ class Category extends Component {
             </div>
             {this.state.dropdownOpen && (
               <div className="duration-500 transition-all bg-white shadow-lg text-accent text-[13px]">
-                {categories?.map((item) => (
+                {Array.isArray(categories) && categories.map((item) => (
                   <Link
                     key={item._id}
                     className="block py-[9px] transition-all px-4 duration-300 hover:text-secondary border-b border-[#e4e4e4] text-sm"

@@ -21,9 +21,11 @@ const Home = () => {
     axios.get('/api/customer/categories').then((res) => {
       const result = res.data;
       setCategories(result);
-      result?.forEach(category => {
-        apiGetProductsByCategory(category._id);
-      });
+      if (Array.isArray(result)) {
+        result.forEach(category => {
+            apiGetProductsByCategory(category._id);
+          });
+      }
     });
   };
 
