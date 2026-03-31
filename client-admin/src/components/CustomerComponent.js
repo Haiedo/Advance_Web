@@ -70,7 +70,7 @@ const Customer = () => {
 
   const handleOrderDetail = (order) => {
     const orderDetailsHTML = order.items
-      ?.map(
+      .map(
         (orderItem) => `
         <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; border-bottom: 1px solid #eee;">
           <img 
@@ -135,7 +135,7 @@ const Customer = () => {
             </tr>
           </thead>
           <tbody>
-            {customers?.map((item) => (
+            {customers.map((item) => (
               <tr
                 key={item._id}
                 className="hover:bg-gray-100 cursor-pointer"
@@ -186,7 +186,7 @@ const Customer = () => {
                 </tr>
               </thead>
               <tbody>
-                {orders?.map((item) => (
+                {orders.map((item) => (
                   <tr
                     key={item._id}
                     className="hover:bg-gray-100 cursor-pointer"

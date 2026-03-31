@@ -70,7 +70,7 @@ const Order = () => {
 
   const handleOrderDetail = (order) => {
     const orderDetailsHTML = order.items
-      ?.map(
+      .map(
         (orderItem) => `
         <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; border-bottom: 1px solid #eee;">
           <img 
@@ -142,7 +142,7 @@ const Order = () => {
             </tr>
           </thead>
           <tbody>
-            {paginatedOrders?.map((item) => (
+            {paginatedOrders.map((item) => (
               <tr key={item._id} className="border-b">
                 <td className="px-4 py-2">{item._id}</td>
                 <td className="px-4 py-2">{new Date(item.cdate).toLocaleString()}</td>
