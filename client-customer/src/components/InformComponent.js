@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import MyContext from '../contexts/MyContext';
 import { MdEmail, MdPhone } from 'react-icons/md';
+import { FaUnlockAlt } from 'react-icons/fa'; 
 import { Modal, Input, Button, Dropdown, Menu, Avatar } from 'antd';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -12,7 +13,7 @@ const Inform = () => {
   const [isSignupModalVisible, setIsSignupModalVisible] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [signupData, setSignupData] = useState({
     txtUsername: '',
     txtPassword: '',
@@ -21,265 +22,158 @@ const Inform = () => {
     txtEmail: ''
   });
 
-  const showLoginModal = () => {
-    setIsLoginModalVisible(true);
+  const coffeeTheme = {
+    primary: '#442c1e',
+    accent: '#d97706',
+    bg: '#fffcf9'
   };
 
-  const showSignupModal = () => {
-    setIsSignupModalVisible(true);
-  };
-
-  const handleLoginCancel = () => {
+  // --- Điều hướng & Đóng Modal ---
+  const goToActive = () => {
     setIsLoginModalVisible(false);
-  };
-
-  const handleSignupCancel = () => {
     setIsSignupModalVisible(false);
+    navigate('/active');
   };
 
+  // --- Xử lý Đăng nhập ---
   const handleLogin = () => {
     if (username && password) {
-      const account = { username, password };
-      apiLogin(account);
+      const account = { username: username, password: password };
+      axios.post('/api/customer/login', account).then((res) => {
+        const result = res.data;
+        if (result.success) {
+          context.setToken(result.token);
+          context.setCustomer(result.customer);
+          setIsLoginModalVisible(false);
+          Swal.fire({ icon: 'success', title: 'Chào mừng quay lại!', showConfirmButton: false, timer: 1500 });
+        } else {
+          Swal.fire({ 
+            icon: 'error', 
+            title: 'Thất bại', 
+            text: result.message, 
+            showCancelButton: true,
+            confirmButtonText: 'Thử lại',
+            cancelButtonText: 'Kích hoạt ngay',
+            confirmButtonColor: coffeeTheme.primary,
+            cancelButtonColor: coffeeTheme.accent
+          }).then((res) => {
+              if (res.isDismissed && res.dismiss === Swal.DismissReason.cancel) {
+                  goToActive();
+              }
+          });
+        }
+      });
     } else {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Thông báo',
-        text: 'Please input username and password',
-        confirmButtonText: 'OK'
-      });
+      Swal.fire({ icon: 'warning', title: 'Thông báo', text: 'Vui lòng nhập đầy đủ thông tin', confirmButtonColor: coffeeTheme.primary });
     }
   };
 
+  // --- Xử lý Đăng ký (Đã sửa lỗi undefined) ---
   const handleSignup = (e) => {
-    e.preventDefault();
-    const { txtUsername, txtPassword, txtName, txtPhone, txtEmail } = signupData;
-    if (!txtUsername || !txtPassword || !txtName || !txtPhone || !txtEmail) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Thông báo',
-        text: 'Bạn chưa nhập đầy đủ thông tin.',
-        showConfirmButton: false
-      });
-      return;
-    }
-
-    const account = { username: txtUsername, password: txtPassword, name: txtName, phone: txtPhone, email: txtEmail };
-    apiSignup(account);
-  };
-
-  const apiLogin = (account) => {
-    axios.post('/api/customer/login', account).then((res) => {
-      const result = res.data;
-      if (result.success) {
-        context.setToken(result.token);
-        context.setCustomer(result.customer);
-        setIsLoginModalVisible(false);
-        Swal.fire({
-          icon: 'success',
-          title: 'Đăng nhập thành công',
-          showConfirmButton: false,
-          timer: 1500
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Đăng nhập thất bại',
-          text: result.message,
-          confirmButtonText: 'OK'
-        });
-      }
-    });
-  };
-
-  const apiSignup = (account) => {
+    e.preventDefault(); // Ngăn load lại trang
+    const account = {
+      username: signupData.txtUsername,
+      password: signupData.txtPassword,
+      name: signupData.txtName,
+      phone: signupData.txtPhone,
+      email: signupData.txtEmail
+    };
+    
     axios.post('/api/customer/signup', account).then((res) => {
       const result = res.data;
       if (result.success) {
         Swal.fire({
           title: 'Đăng ký thành công!',
-          text: 'Vui lòng kiểm tra email của bạn để kích hoạt tài khoản.',
+          text: 'Vui lòng kiểm tra email để nhận mã kích hoạt.',
           icon: 'success',
-          showCancelButton: true,
-          confirmButtonText: 'Đồng ý',
-          cancelButtonText: 'Hủy bỏ',
-          confirmButtonColor: '#21499a',
-          cancelButtonColor: '#FF0000',
-        }).then((result) => {
-          if (result.isConfirmed) {
-            window.open('https://mail.google.com', '_blank');
-          }
+          confirmButtonText: 'Đến trang Kích hoạt',
+          confirmButtonColor: coffeeTheme.primary,
+        }).then(() => {
           setIsSignupModalVisible(false);
-          navigate('/active')
+          navigate('/active');
         });
       } else {
-        Swal.fire({
-          title: 'Đăng ký thất bại',
-          text: result.message,
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
+        Swal.fire({ title: 'Thất bại', text: result.message, icon: 'error' });
       }
-    }).catch((error) => {
-      Swal.fire({
-        title: 'Đăng ký thất bại',
-        text: error.message,
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
     });
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setSignupData({
-      ...signupData,
-      [name]: value
-    });
+    setSignupData({ ...signupData, [name]: value });
   };
 
   const userMenu = (
-    <Menu>
-      <Menu.Item key="0">
-        <Link to="/myprofile">My Profile</Link>
-      </Menu.Item>
-      <Menu.Item key="1">
-        <Link to="/myorders">My Orders</Link>
-      </Menu.Item>
-      <Menu.Item key="2" onClick={() => context.setToken('')}>
-        Logout
-      </Menu.Item>
+    <Menu className="rounded-xl shadow-xl border border-stone-100 p-2">
+      <Menu.Item key="0"><Link to="/myprofile">Trang cá nhân</Link></Menu.Item>
+      <Menu.Item key="1"><Link to="/myorders">Đơn hàng</Link></Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="2" onClick={() => context.setToken('')} className="text-red-500 font-bold">Đăng xuất</Menu.Item>
     </Menu>
   );
 
   return (
-    <div className="flex justify-between items-center py-2 container-80">
-      <li className="flex">
-        <ul id="header-contact" className="flex items-center gap-3">
-          <li className="">
-            <a href="mailto:hhk.cybersecurity@gmail.com" className="flex items-center text-accent gap-1">
-              <MdEmail size={18} />
-              <span className="text-[.8em]">hhk.cybersecurity@gmail.com</span>
-            </a>
-          </li>
-          <div className="">
-            <div className="h-[15px] w-px bg-gray-300"></div>
+    /* fixed top-0 để dính lên đầu trang, z-[110] để nằm trên Sidebar */
+    <div className="fixed top-0 left-0 right-0 bg-[#442c1e] text-white shadow-md z-[110] h-10 flex items-center">
+      <div className="flex justify-between items-center container mx-auto px-6 w-full">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <MdEmail size={14} className="text-stone-400" />
+            <span className="text-[11px] font-light tracking-wider">NextCoffee@gmail.com</span>
           </div>
-          <li className="">
-            <a href="tel:0313728397" className="flex items-center gap-1 text-accent">
-              <MdPhone size={18} />
-              <span className="text-[.8em]">0313728397</span>
-            </a>
-          </li>
-        </ul>
-      </li>
-      <div className="">
-        {context.token === '' ?
-          <div className='text-[.8em] text-accent'>
-            <span className='tracking-wide hover:text-secondary transition-all duration-300 cursor-pointer' onClick={showLoginModal}>Đăng nhập</span> / 
-            <span className='tracking-wide hover:text-secondary transition-all duration-300 cursor-pointer' onClick={showSignupModal}>Đăng ký</span>
+          <div className="flex items-center gap-2 border-l border-stone-600 pl-6">
+            <MdPhone size={14} className="text-stone-400" />
+            <span className="text-[11px] font-light tracking-wider">0823 433 917</span>
           </div>
-          :
-          <Dropdown overlay={userMenu} trigger={['click']}>
-            <span className="ant-dropdown-link cursor-pointer">
-              <Avatar><p className='uppercase'>{context.customer.name.charAt(0)}</p></Avatar> <b>{context.customer.name.slice(1)}</b>
-            </span>
-          </Dropdown>
-        }
+        </div>
+
+        <div className="flex items-center">
+          {context.token === '' ? (
+            <div className='text-[10px] font-bold tracking-widest uppercase flex gap-4'>
+              <span className='cursor-pointer hover:text-orange-400 transition-all' onClick={() => setIsLoginModalVisible(true)}>Đăng nhập</span>
+              <span className="text-stone-600">|</span>
+              <span className='cursor-pointer hover:text-orange-400 transition-all' onClick={() => setIsSignupModalVisible(true)}>Đăng ký</span>
+            </div>
+          ) : (
+            <Dropdown overlay={userMenu} trigger={['click']} placement="bottomRight">
+              <div className="flex items-center gap-2 cursor-pointer bg-white/10 px-3 py-1 rounded-full border border-white/5">
+                <Avatar size="small" className="bg-orange-600 text-[10px] uppercase font-bold">
+                  {context.customer.name.charAt(0)}
+                </Avatar>
+                <span className="text-[10px] font-bold uppercase">Chào, {context.customer.name}</span>
+              </div>
+            </Dropdown>
+          )}
+        </div>
       </div>
 
-      <Modal title="Đăng nhập" visible={isLoginModalVisible} onCancel={handleLoginCancel} footer={null}>
-        <Input 
-          placeholder="Username" 
-          value={username} 
-          onChange={(e) => setUsername(e.target.value)} 
-          style={{ marginBottom: '1rem' }} 
-        />
-        <Input.Password 
-          placeholder="Password" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
-          style={{ marginBottom: '1rem' }} 
-        />
-        <Button className='bg-primary text-white font-medium hover:text-white text-base' onClick={handleLogin} block>
-          Đăng nhập
-        </Button>
+      {/* --- LOGIN MODAL --- */}
+      <Modal title="Thành Viên Đăng Nhập" open={isLoginModalVisible} onCancel={() => setIsLoginModalVisible(false)} footer={null} centered width={380}>
+        <div className="space-y-4 pt-4">
+          <Input prefix="@" placeholder="Tên đăng nhập" value={username} onChange={(e) => setUsername(e.target.value)} className="rounded-xl py-2" />
+          <Input.Password placeholder="Mật khẩu" value={password} onChange={(e) => setPassword(e.target.value)} className="rounded-xl py-2" />
+          <Button block className='bg-[#442c1e] text-white h-11 rounded-xl font-bold' onClick={handleLogin}>ĐĂNG NHẬP</Button>
+          <div className="text-center pt-2">
+            <button onClick={goToActive} className="text-orange-700 font-bold text-[11px] uppercase flex items-center justify-center gap-2 mx-auto italic">
+               Kích hoạt ngay <FaUnlockAlt size={10} />
+            </button>
+          </div>
+        </div>
       </Modal>
 
-      <Modal title="Đăng ký" visible={isSignupModalVisible} onCancel={handleSignupCancel} footer={null}>
-        <form className="space-y-6" onSubmit={handleSignup}>
-          <div>
-            <label htmlFor="txtUsername" className="block text-sm font-bold text-[#222] mb-2">
-              Tên tài khoản *
-            </label>
-            <Input
-              type="text"
-              id="txtUsername"
-              name="txtUsername"
-              className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-300 focus:border-gray-300 sm:text-sm"
-              value={signupData.txtUsername}
-              onChange={handleInputChange}
-              required
-            />
+      {/* --- SIGNUP MODAL --- */}
+      <Modal title="Thành Viên Mới" open={isSignupModalVisible} onCancel={() => setIsSignupModalVisible(false)} footer={null} width={400} centered>
+        <form className="space-y-3 pt-4" onSubmit={handleSignup}>
+          <Input placeholder="Tên tài khoản *" name="txtUsername" onChange={handleInputChange} className="rounded-xl" required />
+          <Input.Password placeholder="Mật khẩu *" name="txtPassword" onChange={handleInputChange} className="rounded-xl" required />
+          <Input placeholder="Họ và tên *" name="txtName" onChange={handleInputChange} className="rounded-xl" required />
+          <Input placeholder="Số điện thoại *" name="txtPhone" onChange={handleInputChange} className="rounded-xl" required />
+          <Input placeholder="Địa chỉ email *" type="email" name="txtEmail" onChange={handleInputChange} className="rounded-xl" required />
+          <Button block className='bg-orange-600 text-white h-11 rounded-xl font-bold border-none mt-2' htmlType="submit">HOÀN TẤT ĐĂNG KÝ</Button>
+          <div className="text-center text-[10px] pt-2">
+            <span className="text-stone-400">Đã có mã xác thực? </span>
+            <span onClick={goToActive} className="font-bold text-[#442c1e] cursor-pointer hover:underline uppercase">Kích hoạt tại đây</span>
           </div>
-          <div>
-            <label htmlFor="txtPassword" className="block text-sm font-bold text-[#222] mb-2">
-              Mật khẩu *
-            </label>
-            <Input.Password
-              id="txtPassword"
-              name="txtPassword"
-              className="w-full px-3 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-300 focus:border-gray-300 sm:text-sm"
-              value={signupData.txtPassword}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="txtName" className="block text-sm font-bold text-[#222] mb-2">
-              Họ và tên *
-            </label>
-            <Input
-              type="text"
-              id="txtName"
-              name="txtName"
-              className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-300 focus:border-gray-300 sm:text-sm"
-              value={signupData.txtName}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="txtPhone" className="block text-sm font-bold text-[#222] mb-2">
-              Số điện thoại *
-            </label>
-            <Input
-              type="tel"
-              id="txtPhone"
-              name="txtPhone"
-              className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-300 focus:border-gray-300 sm:text-sm"
-              value={signupData.txtPhone}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="txtEmail" className="block text-sm font-bold text-[#222] mb-2">
-              Địa chỉ email *
-            </label>
-            <Input
-              type="email"
-              id="txtEmail"
-              name="txtEmail"
-              className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-300 focus:border-gray-300 sm:text-sm"
-              value={signupData.txtEmail}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <Button className='bg-primary text-white font-medium hover:text-white text-base w-full' htmlType="submit">
-            Đăng ký
-          </Button>
         </form>
       </Modal>
     </div>
